@@ -158,17 +158,17 @@ class Command(BaseCommand):
         base_frontend_dir = os.path.join(
             os.path.dirname(__file__), "../../../frontend_dist/"
         )
-        frontend_target_dir = f"{settings.BASE_DIR}/frontend"
+        frontend_target_dir = f"{settings.BASE_DIR}"
         if os.path.isdir(base_frontend_dir):
-            shutil.rmtree(frontend_target_dir, ignore_errors=True)
-            os.makedirs(frontend_target_dir, exist_ok=True)
-            for entry in os.scandir(base_frontend_dir):
-                if entry.name != "config.json":
-                    os.symlink(
-                        f"{base_frontend_dir}/{entry.name}",
-                        f"{frontend_target_dir}/{entry.name}",
-                        target_is_directory=entry.is_dir(),
-                    )
+            # shutil.rmtree(frontend_target_dir, ignore_errors=True)
+            # os.makedirs(frontend_target_dir, exist_ok=True)
+            # for entry in os.scandir(base_frontend_dir):
+            #    if entry.name != "config.json":
+            #        os.symlink(
+            #            f"{base_frontend_dir}/{entry.name}",
+            #            f"{frontend_target_dir}/{entry.name}",
+            #            target_is_directory=entry.is_dir(),
+            #        )
             api_base_url = "/api/v2"
             api_doc_url = "/api/schema-v2/swagger/"
             oauth_authority_url = "/api/o"
@@ -183,14 +183,13 @@ class Command(BaseCommand):
             with open(f"{frontend_target_dir}/config.json", "w") as fp:
                 fp.write(
                     f"""{{
-  "API_BASE_URL": "{api_base_url}",
-  "API_DOC_URL": "{api_doc_url}",
-  "OAUTH_AUTHORITY_URL": "{oauth_authority_url}",
-  "OAUTH_CLIENT_ID": "{client_id}",
-  "OAUTH_REDIRECT_URI": "{redirect_uri}",
-  "OAUTH_POST_REDIRECT_URI": "{oauth_post_logout_redirect_uri}"
-}}
-"""
+                        "API_BASE_URL": "{api_base_url}",
+                        "API_DOC_URL": "{api_doc_url}",
+                        "OAUTH_AUTHORITY_URL": "{oauth_authority_url}",
+                        "OAUTH_CLIENT_ID": "{client_id}",
+                        "OAUTH_REDIRECT_URI": "{redirect_uri}",
+                        "OAUTH_POST_REDIRECT_URI": "{oauth_post_logout_redirect_uri}"
+                    }}"""
                 )
 
 

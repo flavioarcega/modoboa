@@ -64,6 +64,8 @@ EMAIL_CLIENT_CONNECTION_SETTINGS = {
 X_FRAME_OPTIONS = "SAMEORIGIN"
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ["https://{{ allowed_host }}"]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 
@@ -205,11 +207,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
-STATIC_URL = '/sitestatic/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'sitestatic')
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'www/static')
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'www/media')
 
 # oAuth2 settings
 
@@ -295,7 +297,7 @@ PID_FILE_STORAGE_PATH = '/var/run'
 
 # REDIS
 
-REDIS_HOST = 'localhost'
+REDIS_HOST = '{{ redis_host }}'
 REDIS_PORT = 6379
 REDIS_QUOTA_DB = 0
 REDIS_URL = 'redis://{}:{}/{}'.format(REDIS_HOST, REDIS_PORT, REDIS_QUOTA_DB)

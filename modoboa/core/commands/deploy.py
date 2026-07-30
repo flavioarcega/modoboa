@@ -69,10 +69,22 @@ class DeployCommand(Command):
             help="The domain under which you want to deploy modoboa",
         )
         self._parser.add_argument(
+            "--redis",
+            type=str,
+            default="localhost",
+            help="The domain under which you want to deploy modoboa",
+        )
+        self._parser.add_argument(
             "--lang", type=str, default="en", help="Set the default language"
         )
         self._parser.add_argument(
             "--timezone", type=str, default="UTC", help="Set the local timezone"
+        )
+        self._parser.add_argument(
+            "--initialdata",
+            action="store_true",
+            default=False,
+            help="Load initial data",
         )
         self._parser.add_argument(
             "--devel",
@@ -252,11 +264,14 @@ class DeployCommand(Command):
                 "extra_settings": extra_settings,
                 "amavis_enabled": amavis_enabled,
                 "server_domain": parsed_args.domain,
+                "redis_host": parsed_args.redis,
             },
         )
         with open(f"{path}/settings.py", "w") as fp:
             fp.write(tpl)
         generate_rsa_private_key(parsed_args.name)
+        if isfile(f"{path}/settings.pyc"):
+            os.unlink(f"{path}/settings.pyc")
 
         shutil.copyfile(f"{self._templates_dir}/urls.py.tpl", f"{path}/urls.py")
         os.mkdir(f"{parsed_args.name}/media")
@@ -272,16 +287,17 @@ class DeployCommand(Command):
         )
         with open(f"{path}/cron_config.py", "w") as fp:
             fp.write(tpl)
-
-        if isfile(f"{path}/settings.pyc"):
-            os.unlink(f"{path}/settings.pyc")
-        self._exec_django_command("migrate", parsed_args.name, "--noinput")
-        self._exec_django_command(
-            "load_initial_data",
-            parsed_args.name,
-            "--admin-username",
-            parsed_args.admin_username,
-        )
         if parsed_args.collectstatic:
             self._exec_django_command("collectstatic", parsed_args.name, "--noinput")
-        self._exec_django_command("set_default_site", parsed_args.name, allowed_host)
+
+        if parsed_args.initialdata:
+            self._exec_django_command("migrate", parsed_args.name, "--noinput")
+            self._exec_django_command(
+                "load_initial_data",
+                parsed_args.name,
+                "--admin-username",
+                parsed_args.admin_username,
+            )
+            self._exec_django_command(
+                "set_default_site", parsed_args.name, allowed_host
+            )
