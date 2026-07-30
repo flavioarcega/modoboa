@@ -181,16 +181,15 @@ class Command(BaseCommand):
                 oauth_post_logout_redirect_uri = ""
 
             with open(f"{frontend_target_dir}/config.json", "w") as fp:
-                fp.write(
-                    f"""{{
-                        "API_BASE_URL": "{api_base_url}",
-                        "API_DOC_URL": "{api_doc_url}",
-                        "OAUTH_AUTHORITY_URL": "{oauth_authority_url}",
-                        "OAUTH_CLIENT_ID": "{client_id}",
-                        "OAUTH_REDIRECT_URI": "{redirect_uri}",
-                        "OAUTH_POST_REDIRECT_URI": "{oauth_post_logout_redirect_uri}"
-                    }}"""
-                )
+                fp.write(f"""\
+{{
+    "API_BASE_URL": "{api_base_url}",
+    "API_DOC_URL": "{api_doc_url}",
+    "OAUTH_AUTHORITY_URL": "{oauth_authority_url}",
+    "OAUTH_CLIENT_ID": "{client_id}",
+    "OAUTH_REDIRECT_URI": "{redirect_uri}",
+    "OAUTH_POST_REDIRECT_URI": "{oauth_post_logout_redirect_uri}"
+}}""")
 
 
 # ADD SIGNAL FOR THAT
