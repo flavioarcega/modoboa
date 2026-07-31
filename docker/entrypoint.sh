@@ -18,19 +18,20 @@ if [[ -v UNDEFINED ]]; then
 	exit 1
 fi
 
-modoboa-admin.py deploy instance --devel --timezone ${TIMEZONE} --dburl default:${DB_CONN}
+modoboa-admin.py deploy instance --devel --domain ${DOMAIN} --timezone ${TIMEZONE} --dburl default:${DB_CONN}
 
-if [[ -d ./backup ]]; then
+echo "REDIS_HOST=${REDIS_CONN%:*}" >>.env
+echo "REDIS_PORT=${REDIS_CONN#*:}" >>.env
+
+if [[ -d /home/modoboa/backup ]]; then
 	echo "Modoboa backup restoring..."
-	source ./backup/run.sh
+	source /home/modoboa/backup/run.sh
 else
 	echo "Modoboa initializing..."
 	python3 manage.py migrate
 	python3 manage.py load_initial_data
 fi
-python3 manage.py set_default_site --hostname ${DOMAIN} --frontend
-
-cp -r /usr/local/lib/python3.13/dist-packages/modoboa/frontend_dist/* www/
+python3 manage.py set_default_site ${DOMAIN} --frontend
 
 cat <<EOF >gunicorn.conf.py
 accesslog = "-"
@@ -39,9 +40,6 @@ capture_output = True
 loglevel = "info"
 bind = "0.0.0.0:8000"
 EOF
-
-echo "REDIS_HOST=${REDIS_CONN%:*}" >>.env
-echo "REDIS_PORT=${REDIS_CONN#*:}" >>.env
 
 echo "Modoboa starting..."
 gunicorn instance:wsgi

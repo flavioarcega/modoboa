@@ -3,7 +3,6 @@
 import getpass
 import os
 import random
-import subprocess
 import sys
 
 import dj_database_url
@@ -80,31 +79,6 @@ class DeployCommand(Command):
             default=False,
             help="Do not install extensions using pip",
         )
-
-    def _exec_django_command(self, name, cwd, *args):
-        """Run a django command for the freshly created project
-
-        :param name: the command name
-        :param cwd: the directory where the command must be executed
-        """
-        cmd = [sys.executable, "manage.py", name]
-        cmd.extend(args)
-        if not self._verbose:
-            p = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd
-            )
-            output = p.communicate()
-        else:
-            p = subprocess.Popen(cmd, cwd=cwd)
-            p.wait()
-            output = None
-        if p.returncode:
-            if output:
-                print(
-                    "\n".join([line.decode() for line in output if line is not None]),
-                    file=sys.stderr,
-                )
-            print(f"{cmd} failed, check your configuration", file=sys.stderr)
 
     def ask_db_info(self, name="default"):
         """Prompt the user for database information
