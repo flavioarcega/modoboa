@@ -15,15 +15,11 @@ fi
 
 if [[ -v UNDEFINED ]]; then
 	echo "Undefined environment variables:\n${UNDEFINED}"
-	return 1
+	exit 1
 fi
 
-modoboa-admin.py deploy instance \
-	--dburl default:${DB_CONN} \
-	--timezone ${TIMEZONE} \
-	--collectstatic --devel
+modoboa-admin.py deploy instance --devel --timezone ${TIMEZONE} --dburl default:${DB_CONN}
 
-mkdir dkim
 if [[ -d ./backup ]]; then
 	echo "Modoboa backup restoring..."
 	source ./backup/run.sh
