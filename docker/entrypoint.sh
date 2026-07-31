@@ -28,7 +28,7 @@ else
 	python3 manage.py migrate
 	python3 manage.py load_initial_data
 fi
-python3 manage.py set_default_site ${DOMAIN} --frontend
+python3 manage.py set_default_site --hostname ${DOMAIN} --frontend
 
 cp -r /usr/local/lib/python3.13/dist-packages/modoboa/frontend_dist/* www/
 

@@ -59,4 +59,4 @@ ENV PATH="/home/modoboa/.local/bin:${PATH}"
 
 EXPOSE 8000
 
-ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "/entrypoint.sh" ]
