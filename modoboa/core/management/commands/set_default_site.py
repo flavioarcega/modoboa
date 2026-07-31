@@ -47,6 +47,9 @@ class Command(BaseCommand):
         """
         cmd = [sys.executable, "manage.py", name]
         cmd.extend(args)
+
+        # TODO: Buscar de modoboa.core.commands Command
+        self._verbose = False
         if not self._verbose:
             p = subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd
