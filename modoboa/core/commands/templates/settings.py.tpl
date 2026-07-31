@@ -1,5 +1,5 @@
 """
-Django settings for {{ name }} project.
+Django settings for modoboa project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/dev/topics/settings/
@@ -297,8 +297,8 @@ PID_FILE_STORAGE_PATH = '/var/run'
 
 # REDIS
 
-REDIS_HOST = '{{ redis_host }}'
-REDIS_PORT = 6379
+REDIS_HOST = env('REDIS_HOST')
+REDIS_PORT = env('REDIS_PORT')
 REDIS_QUOTA_DB = 0
 REDIS_URL = 'redis://{}:{}/{}'.format(REDIS_HOST, REDIS_PORT, REDIS_QUOTA_DB)
 # To use unix socket, use this scheme instead

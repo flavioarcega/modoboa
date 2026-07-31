@@ -59,13 +59,13 @@ def check_for_updates():
     return update_avail, extensions
 
 
-def generate_rsa_private_key(storage_path: str) -> bool:
+def generate_rsa_private_key() -> bool:
     """Generate RSA private key for OIDC support.
 
     :return: False if the key was not generated
     and True if it was."""
 
-    env_path = os.path.join(storage_path, ".env")
+    env_path = os.path.join(".env")
 
     env = environ.Env(OIDC_RSA_PRIVATE_KEY=(str, "NONE"))
     environ.Env.read_env(env_path)

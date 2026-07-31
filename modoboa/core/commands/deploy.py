@@ -2,9 +2,7 @@
 
 import getpass
 import os
-from os.path import isfile
 import random
-import shutil
 import subprocess
 import sys
 
@@ -13,7 +11,6 @@ import dj_database_url
 import django
 from django.core import management
 from django.template import Context, Template
-from django.utils.encoding import smart_str
 
 from modoboa.core.commands import Command
 from modoboa.core.utils import generate_rsa_private_key
@@ -50,12 +47,6 @@ class DeployCommand(Command):
             "name", type=str, help="The name of your Modoboa instance"
         )
         self._parser.add_argument(
-            "--collectstatic",
-            action="store_true",
-            default=False,
-            help="Run django collectstatic command",
-        )
-        self._parser.add_argument(
             "--dburl",
             type=str,
             nargs="+",
@@ -69,22 +60,10 @@ class DeployCommand(Command):
             help="The domain under which you want to deploy modoboa",
         )
         self._parser.add_argument(
-            "--redis",
-            type=str,
-            default="localhost",
-            help="The domain under which you want to deploy modoboa",
-        )
-        self._parser.add_argument(
             "--lang", type=str, default="en", help="Set the default language"
         )
         self._parser.add_argument(
             "--timezone", type=str, default="UTC", help="Set the local timezone"
-        )
-        self._parser.add_argument(
-            "--initialdata",
-            action="store_true",
-            default=False,
-            help="Load initial data",
         )
         self._parser.add_argument(
             "--devel",
@@ -100,11 +79,6 @@ class DeployCommand(Command):
             action="store_true",
             default=False,
             help="Do not install extensions using pip",
-        )
-        self._parser.add_argument(
-            "--admin-username",
-            default="admin",
-            help="Username of the initial super administrator",
         )
 
     def _exec_django_command(self, name, cwd, *args):
@@ -201,9 +175,7 @@ class DeployCommand(Command):
 
     def handle(self, parsed_args):
         django.setup()
-        management.call_command("startproject", parsed_args.name, verbosity=False)
-        path = f"{parsed_args.name}/{parsed_args.name}"
-        sys.path.append(parsed_args.name)
+        management.call_command("startproject", parsed_args.name, ".")
 
         conn_tpl = Template(DBCONN_TPL)
         connections = {}
@@ -249,55 +221,50 @@ class DeployCommand(Command):
             extensions = [extension[1] for extension in extensions]
             amavis_enabled = "modoboa.amavis" in extensions
 
-        mod = __import__(parsed_args.name, globals(), locals(), [smart_str("settings")])
-        tpl = self._render_template(
-            f"{self._templates_dir}/settings.py.tpl",
-            {
-                "db_connections": connections,
-                "secret_key": management.utils.get_random_secret_key(),
-                "name": parsed_args.name,
-                "allowed_host": allowed_host,
-                "lang": parsed_args.lang,
-                "timezone": parsed_args.timezone,
-                "devmode": parsed_args.devel,
-                "extensions": extensions,
-                "extra_settings": extra_settings,
-                "amavis_enabled": amavis_enabled,
-                "server_domain": parsed_args.domain,
-                "redis_host": parsed_args.redis,
-            },
-        )
-        with open(f"{path}/settings.py", "w") as fp:
-            fp.write(tpl)
-        generate_rsa_private_key(parsed_args.name)
-        if isfile(f"{path}/settings.pyc"):
-            os.unlink(f"{path}/settings.pyc")
+        # mod = __import__(parsed_args.name, globals(), locals(), [smart_str("settings")])
 
-        shutil.copyfile(f"{self._templates_dir}/urls.py.tpl", f"{path}/urls.py")
-        os.mkdir(f"{parsed_args.name}/media")
+        with open(f"{parsed_args.name}/settings.py", "w") as fp:
+            fp.write(
+                self._render_template(
+                    f"{self._templates_dir}/settings.py.tpl",
+                    {
+                        "db_connections": connections,
+                        "secret_key": management.utils.get_random_secret_key(),
+                        "name": parsed_args.name,
+                        "allowed_host": allowed_host,
+                        "lang": parsed_args.lang,
+                        "timezone": parsed_args.timezone,
+                        "devmode": parsed_args.devel,
+                        "extensions": extensions,
+                        "extra_settings": extra_settings,
+                        "amavis_enabled": amavis_enabled,
+                        "server_domain": parsed_args.domain,
+                    },
+                )
+            )
+
+        # if isfile(f"{parsed_args.name}/settings.pyc"):
+        #    os.unlink(f"{parsed_args.name}/settings.pyc")
+
+        with open(f"{parsed_args.name}/urls.py", "w") as fp:
+            fp.write(
+                self._render_template(
+                    f"{self._templates_dir}/urls.py.tpl",
+                    {},
+                )
+            )
 
         hour = random.randint(0, 6)
-        tpl = self._render_template(
-            f"{self._templates_dir}/cron_config.py.tpl",
-            {
-                "minute": random.randint(1, 59),
-                "hour_start": hour,
-                "hour_end": hour + 12,
-            },
-        )
-        with open(f"{path}/cron_config.py", "w") as fp:
-            fp.write(tpl)
-        if parsed_args.collectstatic:
-            self._exec_django_command("collectstatic", parsed_args.name, "--noinput")
+        with open(f"{parsed_args.name}/cron_config.py", "w") as fp:
+            fp.write(
+                self._render_template(
+                    f"{self._templates_dir}/cron_config.py.tpl",
+                    {
+                        "minute": random.randint(1, 59),
+                        "hour_start": hour,
+                        "hour_end": hour + 12,
+                    },
+                )
+            )
 
-        if parsed_args.initialdata:
-            self._exec_django_command("migrate", parsed_args.name, "--noinput")
-            self._exec_django_command(
-                "load_initial_data",
-                parsed_args.name,
-                "--admin-username",
-                parsed_args.admin_username,
-            )
-            self._exec_django_command(
-                "set_default_site", parsed_args.name, allowed_host
-            )
+        generate_rsa_private_key()

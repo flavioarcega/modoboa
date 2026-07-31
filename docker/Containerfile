@@ -2,8 +2,7 @@
 FROM docker.io/library/debian:13-slim AS base
 #========================
 
-ARG DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update --fix-missing && apt-get install -y \
   coreutils       \
@@ -43,6 +42,8 @@ RUN pip install --root-user-action=ignore --break-system-packages gunicorn psyco
 FROM base as instance
 #========================
 
+ENV PYTHONUNBUFFERED=1
+
 RUN apt-get autoremove && apt-get autoclean
 
 COPY --from=build /usr/local/lib /usr/local/lib
@@ -53,21 +54,6 @@ USER modoboa
 WORKDIR /home/modoboa
 ENV PATH="/home/modoboa/.local/bin:${PATH}"
 
-ARG DOMAIN
-ARG DBURL
-ARG REDIS_HOST
-
-RUN modoboa-admin.py deploy instance \
-  --timezone 'America/Sao_Paulo' \
-  --domain ${DOMAIN} \
-  --redis ${REDIS_HOST} \
-  --dburl default:${DBURL} \
-  --collectstatic --devel
-
-RUN mv instance/media instance/www/media
-
-WORKDIR /home/modoboa/instance
-
 EXPOSE 8000
 
-CMD ["gunicorn", "instance.wsgi"]
+ENTRYPOINT [ "/entrypoint.sh" ]
