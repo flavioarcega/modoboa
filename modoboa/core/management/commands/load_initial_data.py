@@ -36,12 +36,6 @@ class Command(BaseCommand):
             default=False,
             help="Also load some fixtures from the admin application.",
         )
-        parser.add_argument(
-            "--dev",
-            action="store_true",
-            default=False,
-            help="Setup dev environment. DO NOT USE IN PRODUCTION",
-        )
 
     def handle(self, *args, **options):
         """Command entry point."""

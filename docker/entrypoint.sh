@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e # stop on error
+set -x # show execution (debug)
+
 if [[ ! -v DOMAIN ]]; then
 	UNDEFINED="${UNDEFINED} - DOMAIN\n"
 fi
@@ -42,4 +45,4 @@ bind = "0.0.0.0:8000"
 EOF
 
 echo "Modoboa starting..."
-gunicorn instance:wsgi
+gunicorn instance.wsgi

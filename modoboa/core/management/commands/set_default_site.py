@@ -5,10 +5,8 @@ See `https://docs.djangoproject.com/en/dev/ref/contrib/sites/`_.
 """
 
 import os
-import sys
 import uuid
 import shutil
-import subprocess
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -38,34 +36,12 @@ class Command(BaseCommand):
             default=False,
             help="Use relative urls in generated config.json file",
         )
-
-    def _exec_django_command(self, name, cwd, *args):
-        """Run a django command for the freshly created project
-
-        :param name: the command name
-        :param cwd: the directory where the command must be executed
-        """
-        cmd = [sys.executable, "manage.py", name]
-        cmd.extend(args)
-
-        # TODO: Buscar de modoboa.core.commands Command
-        self._verbose = False
-        if not self._verbose:
-            p = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd
-            )
-            output = p.communicate()
-        else:
-            p = subprocess.Popen(cmd, cwd=cwd)
-            p.wait()
-            output = None
-        if p.returncode:
-            if output:
-                print(
-                    "\n".join([line.decode() for line in output if line is not None]),
-                    file=sys.stderr,
-                )
-            print(f"{cmd} failed, check your configuration", file=sys.stderr)
+        parser.add_argument(
+            "--dev",
+            action="store_true",
+            default=False,
+            help="Setup dev environment. DO NOT USE IN PRODUCTION",
+        )
 
     def handle(self, *args, **options):
         """Command entry point."""
@@ -79,49 +55,36 @@ class Command(BaseCommand):
         if not options["frontend"]:
             return
 
-        self._exec_django_command("collectstatic", "--noinput")
-
-        os.mkdir("/www/media")
+        call_command("collectstatic", "--noinput")
 
         app_model = get_application_model()
         frontend_application = app_model.objects.filter(name="modoboa_frontend")
 
-        # TODO : improve support for multiple allowed_host for frontend
-        base_uris_list = [f"https://{host}" for host in site.domain]
-        base_uris = " ".join(base_uris_list)
-        base_uri = base_uris_list[0]
-
-        redirect_uris = " ".join([f"{uri}/login/logged" for uri in base_uris_list])
-        if not options["relative_urls_in_config"]:
-            redirect_uri = redirect_uris.split(" ")[0]
-        else:
-            redirect_uri = "/login/logged"
+        redirect_uri = f"https://{site.domain}/login/logged"
 
         client_id = ""
         if options["dev"]:
-            base_uri = "https://localhost:3000/"
-            base_uris = base_uri
             redirect_uri = "https://localhost:3000/login/logged"
-            redirect_uris = redirect_uri
             client_id = "LVQbfIIX3khWR3nDvix1u9yEGHZUxcx53bhJ7FlD"
+
         if not frontend_application.exists():
             if not options["dev"]:
                 client_id = str(uuid.uuid4())
             call_command(
                 "createapplication",
                 "--algorithm=RS256",
-                f"--redirect-uris={redirect_uris}",
+                f"--redirect-uris={redirect_uri}",
                 "--name=modoboa_frontend",
                 f"--client-id={client_id}",
-                f"--post-logout-redirect-uris={base_uris}",
+                f"--post-logout-redirect-uris=https://localhost:3000/",
                 "--skip-authorization",
                 "public",
                 "authorization-code",
             )
         else:
             app = frontend_application.first()
-            app.redirect_uris = redirect_uris
-            app.post_logout_redirect_uris = base_uris
+            app.redirect_uris = redirect_uri
+            app.post_logout_redirect_uris = site.domain
             app.save()
             client_id = app.client_id
 
@@ -135,10 +98,10 @@ class Command(BaseCommand):
         api_doc_url = "/api/schema-v2/swagger/"
         oauth_authority_url = "/api/o"
         if not options["relative_urls_in_config"]:
-            api_base_url = f"{base_uri}{api_base_url}"
-            api_doc_url = f"{base_uri}{api_doc_url}"
-            oauth_authority_url = f"{base_uri}{oauth_authority_url}"
-            oauth_post_logout_redirect_uri = base_uri
+            api_base_url = f"https://{site.domain}{api_base_url}"
+            api_doc_url = f"https://{site.domain}{api_doc_url}"
+            oauth_authority_url = f"https://{site.domain}{oauth_authority_url}"
+            oauth_post_logout_redirect_uri = f"http://{site.domain}/"
         else:
             oauth_post_logout_redirect_uri = ""
 
